@@ -1,0 +1,1 @@
+# public-magalu-cloud-ingestor
