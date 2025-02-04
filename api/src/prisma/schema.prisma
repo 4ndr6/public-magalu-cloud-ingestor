@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  pulses    Pulse[]  @relation("TenantPulses")
+
+  @@unique([name])
+  @@index([name])
+  @@map("tenants")
+}
+
+model Product {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sku         String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  pulses      Pulse[]  @relation("ProductPulses")
+
+  @@unique([sku])
+  @@index([sku])
+  @@map("products")
+}
+
+model Pulse {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid()
+  productId  String   @map("product_id") @db.Uuid()
+  usedAmount String
+  useUnity   String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  tenant  Tenant  @relation("TenantPulses", fields: [tenantId], references: [id])
+  product Product @relation("ProductPulses", fields: [productId], references: [id])
+
+  @@unique([tenantId, productId])
+  @@index([tenantId, productId])
+  @@map("pulses")
+}

@@ -1,0 +1,6 @@
+FROM node:22-alpine3.20
+WORKDIR /app
+COPY . .
+RUN yarn global add @nestjs/cli prisma && yarn cache clean --force
+ENTRYPOINT [ "yarn" ]
+CMD [ "start:dev" ]

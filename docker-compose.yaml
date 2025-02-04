@@ -1,0 +1,73 @@
+version: "3.9"
+
+services:
+  database-svc:
+    container_name: database
+    build:
+      context: .
+      dockerfile: ./dockerfiles/dev/database
+    environment:
+      POSTGRES_DATABASES: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data
+
+  api-svc:
+    container_name: api
+    build:
+      context: ./api
+      dockerfile: ../dockerfiles/dev/api
+    depends_on:
+      - database-svc
+    environment:
+      API_TITLE: "Magalu Cloud - API"
+      API_NAME: "Ingestor"
+      API_DESCRIPTION: "API destinada a implementação do Ingestor, parte do desafio do Magalu Cloud"
+      API_TAG: "Magalu Cloud"
+      API_VERSION: "v1.0.0"
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/magalu_cloud_ingestor?schema=public"
+      JWT_TTL_SECONDS: "60"
+      MIDDLEWARE_AUTHENTICATION: "true"
+      MIDDLEWARE_AUTHORIZATION: "true"
+      NODE_ENV: "development"
+      PORT: 4000
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - ./api/:/app
+      - api-dist:/app/dist
+      - api-node_modules:/app/node_modules
+
+  worker-svc:
+    container_name: worker
+    build:
+      context: ./worker
+      dockerfile: ../dockerfiles/dev/worker
+    depends_on:
+      - api-svc
+    environment:
+      HOST: http://localhost:4000
+      MAX_TENANT: "2"
+      MAX_SKU: "3"
+      MIN_AMOUNT: "1"
+      MAX_AMOUNT: "999"
+      SLEEP: "0.2"
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - ./worker:/app
+
+volumes:
+  postgresql-data:
+    driver: local
+  api-dist:
+    driver: local
+  api-node_modules:
+    driver: local
+networks:
+  default:
+    name: magalu-cloud
